@@ -64,9 +64,15 @@ const COLUMN_CONFIG = [
     categories: [1, 2, 3, 4, 5],
     labels: ["1", "2", "3", "4", "5"],
   },
-  // 4. Druhy jízdenek podle místa nákupu
-  // ── TODO: stacked bar + donut, completely different layout ──
-
+  // 4. Místo nákupu jízdenky
+  // note: 'V automatu ' has a trailing space in the source data
+  {
+    chartType: 'pie',
+    column: 'Jak zpravidla nakupuji jízdenky',
+    title: 'Místo nákupu jízdenky',
+    categories: ['V aplikaci', 'Ve vlaku', 'Na pokladně', 'V e-shopu', 'V automatu '],
+    labels: ['V aplikaci', 'Ve vlaku', 'Na pokladně', 'V e-shopu', 'V automatu'],
+  },
   // 5. Prodejní místa se vzdálenou obsluhou
   {
     column: 'Využívám prodejní místa se vzdálenou obsluhou?',
