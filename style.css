@@ -107,9 +107,45 @@ body
 }
 
 
+.file-chosen .clear:hover
+{
+    color: #c0392b;
+}
 
+.filters 
+{
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+}
 
+.filter-group
+{
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
 
+.filter-group label
+{
+    font-size: 11px; 
+    color: #888;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.filter-group select, .filter-group input
+{
+    padding: 9px 12px;
+    border: 1px solid #d0cec8;
+    border-radius: 8px;
+    font-size: 14px;
+    background: #fff;
+    color: #1a1a1a;
+    width: 100%;
+}
 
 .btn-primary 
 {
