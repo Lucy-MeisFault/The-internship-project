@@ -10,6 +10,7 @@ const console = require('console');
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors());
+app.use(express.static(path.join(__dirname)));
 
 
 // ─── Column names ─────────────────────────────────────────────────────────────
@@ -283,7 +284,7 @@ function barOpts(x, y, w, h, colors) {
 }
 
 // ─── Helper: compute legend top y, anchored 0.5in above slide bottom ────────────
-const slideH = 6.03;
+const slideH = 5.63;
 const legendPitch = 0.15;
 const legendMargin = 0.5;
 function legendTopY(itemCount) {
@@ -548,4 +549,5 @@ case 'multiSelect':
   }
 });
 
-app.listen(3000, () => console.log('running on http://localhost:3000'));
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log('running on ' + port));
