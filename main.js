@@ -12,7 +12,6 @@ const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors());
 app.use(express.static(path.join(__dirname)));
 
-
 // ─── Column names ─────────────────────────────────────────────────────────────
 const lineColumn = 'Jakou linku provozované společností ARRIVA vlaky s.r.o., využívám nejčastěji?';
 
@@ -65,14 +64,8 @@ const COLUMN_CONFIG = [
     categories: [1, 2, 3, 4, 5],
     labels: ["1", "2", "3", "4", "5"],
   },
-  // 4. Místo nákupu jízdenky
-  {
-    chartType: 'pie',
-    column: 'Jak zpravidla nakupuji jízdenky',
-    title: 'Místo nákupu jízdenky',
-    categories: ['V aplikaci', 'Ve vlaku', 'Na pokladně', 'V e-shopu', 'V automatu '],
-    labels: ['V aplikaci', 'Ve vlaku', 'Na pokladně', 'V e-shopu', 'V automatu'],
-  },
+  // 4. Druhy jízdenek podle místa nákupu
+  // ── TODO: stacked bar + donut, completely different layout ──
 
   // 5. Prodejní místa se vzdálenou obsluhou
   {
@@ -260,7 +253,7 @@ function pieOpts(x, y, w, h, colors) {
     x, y, w, h,
     chartColors: colors || pieColors,
     showPercent: true,
-    dataLabelColor: '404040',
+    dataLabelColor: 'FFFFFF',
     dataLabelFontSize: 8,
     dataLabelFontBold: true,
     showLegend: false,
@@ -284,7 +277,7 @@ function barOpts(x, y, w, h, colors) {
 }
 
 // ─── Helper: compute legend top y, anchored 0.5in above slide bottom ────────────
-const slideH = 5.63;
+const slideH = 6.03;
 const legendPitch = 0.15;
 const legendMargin = 0.5;
 function legendTopY(itemCount) {
@@ -548,6 +541,5 @@ case 'multiSelect':
     res.status(500).json({ error: err.message });
   }
 });
-
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log('running on ' + port));
