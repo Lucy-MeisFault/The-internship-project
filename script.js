@@ -36,31 +36,29 @@ dropZone.ondrop = (e) => {
     dropZone.style.display = 'flex';
   };
 
-document.getElementById('generateBtn').onclick = () => {
-if (!fileInput.files || fileInput.files.length === 0) {
-    return;
-}
+document.getElementById('generateBtn').onclick = async () => {
+  if (!fileInput.files || fileInput.files.length === 0) return;
 
-  const file = document.getElementById('fileInput').files[0];
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating…';
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', fileInput.files[0]);
 
-fetch('/upload', {
-    method: 'POST',
-    body: formData
-})
-.then(r => r.blob())
-.then(blob => {
+  try {
+    const r = await fetch('/upload', { method: 'POST', body: formData });
+    const blob = await r.blob();
     const url = window.URL.createObjectURL(blob);
-
     const a = document.createElement('a');
     a.href = url;
     a.download = 'report.pptx';
-
     document.body.appendChild(a);
     a.click();
     a.remove();
-
     window.URL.revokeObjectURL(url);
-});
-}
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = 'Generate report ↗';
+  }
+};
