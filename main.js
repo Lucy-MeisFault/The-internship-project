@@ -10,7 +10,7 @@ const console = require('console');
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors());
-
+app.use(express.static(path.join(__dirname)));
 
 // ─── Column names ─────────────────────────────────────────────────────────────
 const lineColumn = 'Jakou linku provozované společností ARRIVA vlaky s.r.o., využívám nejčastěji?';
