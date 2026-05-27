@@ -37,10 +37,9 @@ dropZone.ondrop = (e) => {
   };
 
 document.getElementById('generateBtn').onclick = () => {
-if (fileInput.value === '') {
+if (!fileInput.files || fileInput.files.length === 0) {
     return;
 }
-
 
   const file = document.getElementById('fileInput').files[0];
   const formData = new FormData();

@@ -541,5 +541,5 @@ case 'multiSelect':
     res.status(500).json({ error: err.message });
   }
 });
-
-app.listen(process.env.PORT || 3000, () => console.log('running on ' + process.env.PORT || 3000));
+const port = process.env.PORT || 3000;
+app.listen(port, () => console.log('running on ' + port));
