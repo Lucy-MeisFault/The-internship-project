@@ -46,7 +46,7 @@ if (fileInput.value === '') {
   const formData = new FormData();
   formData.append('file', file);
 
-fetch('http://localhost:3000/upload', {
+fetch('/upload', {
     method: 'POST',
     body: formData
 })
