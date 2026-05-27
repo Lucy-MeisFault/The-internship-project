@@ -10,7 +10,7 @@ const console = require('console');
 const app = express();
 const upload = multer({ storage: multer.memoryStorage() });
 app.use(cors());
-app.use(express.static(path.join(__dirname)));
+
 
 // ─── Column names ─────────────────────────────────────────────────────────────
 const lineColumn = 'Jakou linku provozované společností ARRIVA vlaky s.r.o., využívám nejčastěji?';
@@ -64,8 +64,14 @@ const COLUMN_CONFIG = [
     categories: [1, 2, 3, 4, 5],
     labels: ["1", "2", "3", "4", "5"],
   },
-  // 4. Druhy jízdenek podle místa nákupu
-  // ── TODO: stacked bar + donut, completely different layout ──
+  // 4. Místo nákupu jízdenky
+  {
+    chartType: 'pie',
+    column: 'Jak zpravidla nakupuji jízdenky',
+    title: 'Místo nákupu jízdenky',
+    categories: ['V aplikaci', 'Ve vlaku', 'Na pokladně', 'V e-shopu', 'V automatu '],
+    labels: ['V aplikaci', 'Ve vlaku', 'Na pokladně', 'V e-shopu', 'V automatu'],
+  },
 
   // 5. Prodejní místa se vzdálenou obsluhou
   {
@@ -253,7 +259,7 @@ function pieOpts(x, y, w, h, colors) {
     x, y, w, h,
     chartColors: colors || pieColors,
     showPercent: true,
-    dataLabelColor: 'FFFFFF',
+    dataLabelColor: '404040',
     dataLabelFontSize: 8,
     dataLabelFontBold: true,
     showLegend: false,
@@ -541,5 +547,5 @@ case 'multiSelect':
     res.status(500).json({ error: err.message });
   }
 });
-const port = process.env.PORT || 3000;
-app.listen(port, () => console.log('running on ' + port));
+
+app.listen(3000, () => console.log('running on http://localhost:3000'));
