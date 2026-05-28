@@ -544,7 +544,7 @@ function addStackedBarSlides(pres, lines, config) {
     const colWidth = 4.7;
     const legendX = [0.2, 0.2 + colWidth];
     const itemsPerCol = Math.ceil(config.seriesLabels.length / 2);
-    const legendTop = 5.55;
+    const legendTop = 5.05;
     config.seriesLabels.forEach((text, k) => {
       const lCol = Math.floor(k / itemsPerCol);
       const lRow = k % itemsPerCol;
