@@ -16,18 +16,6 @@ app.use(express.static(path.join(__dirname)));
 const lineColumn = 'Jakou linku provozované společností ARRIVA vlaky s.r.o., využívám nejčastěji?';
 
 // ─── Column config ────────────────────────────────────────────────────────────
-// Each entry defines one slide group to generate.
-// - column:      exact header from the spreadsheet
-// - title:       slide title shown in the presentation
-// - chartType:   'pie', 'bar', 'multiBar', or 'multiSelect'
-// - categories:  the answer options to count (must match cell values exactly)
-// - labels:      short display labels for the chart (same order as categories)
-//
-// multiBar:    multiple columns shown as series on one grouped bar chart per line
-//              requires: columns[] and seriesLabels[] instead of column/categories/labels
-//
-// multiSelect: semicolon-separated multi-answer column, counts each option independently
-//              requires: column, categories[], labels[]
 const COLUMN_CONFIG = [
   // 1. Věkové kategorie dotazovaných
   {
@@ -51,7 +39,6 @@ const COLUMN_CONFIG = [
     labels: ["Pravidelně (např. pá/ne)", "Přibližně jednou měsíčně", "Příležitostně, několikrát ročně", "Denní dojíždění"],
   },
   // 3. Hodnocení zákaznické péče ve vlacích ARRIVA
-  // grouped bar: průvodčí + čistota + jízdní řád, ratings 1-5
   {
     chartType: 'multiBar',
     title: 'Hodnocení zákaznické péče ve vlacích ARRIVA (průvodčí, čistota, jízdní řád)',
@@ -65,13 +52,37 @@ const COLUMN_CONFIG = [
     labels: ["1", "2", "3", "4", "5"],
   },
   // 4. Místo nákupu jízdenky
-  // note: 'V automatu ' has a trailing space in the source data
   {
     chartType: 'pie',
     column: 'Jak zpravidla nakupuji jízdenky',
     title: 'Místo nákupu jízdenky',
     categories: ['V aplikaci', 'Ve vlaku', 'Na pokladně', 'V e-shopu', 'V automatu '],
     labels: ['V aplikaci', 'Ve vlaku', 'Na pokladně', 'V e-shopu', 'V automatu'],
+  },
+  // 4b. Druhy jízdenek podle místa nákupu
+  {
+    chartType: 'stackedBar',
+    title: 'Druhy jízdenek podle místa nákupu',
+    xCol: 'Jak zpravidla nakupuji jízdenky',
+    seriesCol: 'Jaké využívám druhy jízdenek',
+    xValues: ['Na pokladně', 'V aplikaci', 'V automatu ', 'V e-shopu', 'Ve vlaku'],
+    xLabels: ['Na pokladně', 'V aplikaci', 'V automatu', 'V e-shopu', 'Ve vlaku'],
+    seriesValues: [
+      'Zpáteční v tarifu ARRIVA',
+      'Jednotlivé v tarifu ARRIVA',
+      'Jednotlivé jízdenky ve Státním jednotném tarifu (ONETICKET)',
+      'Jednotlivé jízdenky Integrovaných dopravních systémů (PID, IDOL, IREDO, DÚK, ID ZK, IDPK)',
+      'Časové jízdenky ve Státním jednotném tarifu (ONETICKET)',
+      'Časové jízdenky integrovaných dopravních systémů',
+    ],
+    seriesLabels: [
+      'Zpáteční ARRIVA',
+      'Jednotlivé ARRIVA',
+      'Jednotlivé ONETICKET',
+      'Jednotlivé IDS (PID, IDOL, IREDO…)',
+      'Časové ONETICKET',
+      'Časové IDS',
+    ],
   },
   // 5. Prodejní místa se vzdálenou obsluhou
   {
@@ -154,27 +165,24 @@ const COLUMN_CONFIG = [
     labels: ["NEJHORŠÍ 1", "2", "3", "4", "NEJLEPŠÍ 5"],
   },
   // 13a. Spokojenost s časovými polohami vlaků
-  // free text column; "Ano..." = vyhovující, anything else = nevyhovující
   {
     chartType: 'pie',
     column: 'Považujete časové polohy vlaků na linkách, kterými cestujete, za vyhovující',
     title: 'Jsou časové polohy vlaků na vašich linkách vyhovující?',
-    categories: ['ano'],   // sentinel — handled by yesNo flag below
+    categories: ['ano'],
     labels: ["Vyhovující", "Nevyhovující"],
     yesNo: true,
   },
   // 13b. Spokojenost s počtem vlaků
-  // free text column; "Ano..." = dostatečný, anything else = nedostatečný
   {
     chartType: 'pie',
     column: 'Považujete nabízený počet vlaků na linkách, kterými cestujete za dostatečný?',
     title: 'Je nabízený počet vlaků na vašich linkách dostatečný?',
-    categories: ['ano'],   // sentinel — handled by yesNo flag below
+    categories: ['ano'],
     labels: ["Dostatečný", "Nedostatečný"],
     yesNo: true,
   },
   // 14. Cíle cest cestujících
-  // multi-select: semicolon-separated, each option counted independently as % of respondents
   {
     chartType: 'multiSelect',
     column: 'Vlak ARRIVA využívám',
@@ -193,20 +201,18 @@ const COLUMN_CONFIG = [
 ];
 
 // ─── Layout ───────────────────────────────────────────────────────────────────
-let chartX = [0.5, 3.5, 6.5];   // x positions of the 3 charts per row
-let chartY = [1.1, 3.3];        // y positions for row 1 and row 2
-let chartW = 3.0;               // chart width
-let chartH = 2.0;               // chart height
-let headerH = 0.5;              // height of the title header bar
-let labelY = [0.9, 3.1];        // y positions of chart labels for row 1 and row 2
+let chartX = [0.5, 3.5, 6.5];
+let chartY = [1.1, 3.3];
+let chartW = 3.0;
+let chartH = 2.0;
+let headerH = 0.5;
+let labelY = [0.9, 3.1];
 
 // ─── Colors ───────────────────────────────────────────────────────────────────
-// official Arriva brand palette
 let titleColor   = "FFFFFF";
-let headerColor  = "00becd";               // Arriva Teal
-let pieColors    = ["0047a5", "ff6e1d", "2d146e", "911d8b"];  // Mid Blue, Orange, Dark Blue, Purple
+let headerColor  = "00becd";
+let pieColors    = ["0047a5", "ff6e1d", "2d146e", "911d8b"];
 let seriesColors = ["0047a5", "ff6e1d", "2d146e"];
-
 
 // ─── Helper: add header bar + title to a slide ────────────────────────────────
 function addHeader(pres, slide, title) {
@@ -232,7 +238,6 @@ function addLogo(slide) {
 
 // ─── Helper: extract short line label from full line name ─────────────────────
 function getLineLabel(fullName) {
-  // Fixed: removed \b word boundaries so it works with non-breaking spaces (\xa0)
   const match = fullName.match(/([A-Z]\d+[A-Z]?(?:\s*(?:jih|sever))?)/);
   return match ? match[1] : fullName.substring(0, 10);
 }
@@ -253,7 +258,7 @@ function addPieLegend(pres, slide, labels) {
   });
 }
 
-// ─── Helper: pie chart options with shadow ────────────────────────────────────
+// ─── Helper: pie chart options ────────────────────────────────────────────────
 function pieOpts(x, y, w, h, colors) {
   return {
     x, y, w, h,
@@ -282,7 +287,7 @@ function barOpts(x, y, w, h, colors) {
   };
 }
 
-// ─── Helper: compute legend top y, anchored 0.5in above slide bottom ────────────
+// ─── Helper: legend y position ────────────────────────────────────────────────
 const slideH = 6.03;
 const legendPitch = 0.15;
 const legendMargin = 0.5;
@@ -290,14 +295,12 @@ function legendTopY(itemCount) {
   return slideH - legendMargin - itemCount * legendPitch;
 }
 
-// ─── Helper: suppress zeros in a values array (replace 0 with null) ──────────
-// pptxgenjs skips null values so no label is shown for 0%
+// ─── Helper: suppress zeros ───────────────────────────────────────────────────
 function suppressZeros(vals) {
   return vals.map(v => v === 0 ? null : v);
 }
 
-
-// ─── Slide generator: standard pie or bar (6 charts per slide) ───────────────
+// ─── Slide generator: standard pie or bar ────────────────────────────────────
 function addCategorySlides(pres, lines, config) {
   const lineNames = Object.keys(lines);
   const slideCount = Math.ceil(lineNames.length / 6);
@@ -333,7 +336,6 @@ function addCategorySlides(pres, lines, config) {
       const col = j % 3;
       const row = Math.floor(j / 3);
 
-      // compute weighted average for 1-5 bar charts
       const avgText = config.chartType === 'bar'
         ? (() => {
             const avg = config.categories.reduce((sum, cat, i) =>
@@ -367,7 +369,7 @@ function addCategorySlides(pres, lines, config) {
   }
 }
 
-// ─── Slide generator: multiBar (grouped bar, multiple series, 6 charts per slide) ──
+// ─── Slide generator: multiBar ───────────────────────────────────────────────
 function addMultiBarSlides(pres, lines, config) {
   const lineNames = Object.keys(lines);
   const slideCount = Math.ceil(lineNames.length / 6);
@@ -390,7 +392,6 @@ function addMultiBarSlides(pres, lines, config) {
       const col = j % 3;
       const row = Math.floor(j / 3);
 
-      // compute per-series averages
       const seriesAvgs = config.columns.map(colName =>
         config.categories.reduce((sum, cat) =>
           sum + cat * responses.filter(r => r[colName] === cat).length, 0) / total
@@ -407,7 +408,6 @@ function addMultiBarSlides(pres, lines, config) {
         fontSize: 7,
       });
 
-      // build one series per column
       const chartData = config.columns.map((colName, s) => ({
         name: config.seriesLabels[s],
         labels: config.labels,
@@ -427,7 +427,6 @@ function addMultiBarSlides(pres, lines, config) {
       });
     }
 
-    // series legend for multiBar
     const top = legendTopY(config.seriesLabels.length);
     config.seriesLabels.forEach((text, k) => {
       slide.addShape(pres.shapes.RECTANGLE, {
@@ -443,9 +442,7 @@ function addMultiBarSlides(pres, lines, config) {
   }
 }
 
-// ─── Slide generator: multiSelect (semicolon-separated, one bar chart per line) ──
-// each category is counted if it appears anywhere in the cell value
-// values shown as % of total respondents (can sum over 100%)
+// ─── Slide generator: multiSelect ────────────────────────────────────────────
 function addMultiSelectSlides(pres, lines, config) {
   const lineNames = Object.keys(lines);
   const slideCount = Math.ceil(lineNames.length / 6);
@@ -473,7 +470,6 @@ function addMultiSelectSlides(pres, lines, config) {
         fontSize: 9, bold: true, color: '1A1A2E',
       });
 
-      // count how many responses include each category (substring match)
       const vals = config.categories.map(cat =>
         Math.round(responses.filter(r => String(r[config.column] || '').includes(cat)).length / total * 100)
       );
@@ -485,15 +481,85 @@ function addMultiSelectSlides(pres, lines, config) {
   }
 }
 
+// ─── Slide generator: stackedBar ─────────────────────────────────────────────
+// Stacked bar chart: X-axis = xCol values, series = seriesCol values.
+// Each bar shows what % of rows with that X value belong to each series value.
+function addStackedBarSlides(pres, lines, config) {
+  const lineNames = Object.keys(lines);
+  const slideCount = Math.ceil(lineNames.length / 6);
+
+  for (let i = 0; i < slideCount; i++) {
+    if (i === 0) pres.addSection({ title: config.title });
+    const slide = pres.addSlide({ sectionTitle: config.title });
+    addHeader(pres, slide, config.title);
+    addLogo(slide);
+
+    for (let j = 0; j < 6; j++) {
+      const lineIndex = i * 6 + j;
+      if (lineIndex >= lineNames.length) break;
+
+      const fullName = lineNames[lineIndex];
+      const responses = lines[fullName];
+      const label = getLineLabel(fullName);
+      const col = j % 3;
+      const row = Math.floor(j / 3);
+
+      slide.addText(label, {
+        x: chartX[col], y: labelY[row], w: chartW, h: 0.2,
+        fontSize: 9, bold: true, color: '1A1A2E',
+      });
+
+      // One series per seriesValue; one data point per xValue.
+      // Value = % of rows matching that xValue that also match that seriesValue.
+      const chartData = config.seriesValues.map((sVal, si) => ({
+        name: config.seriesLabels[si],
+        labels: config.xLabels,
+        values: config.xValues.map(xVal => {
+          const atX = responses.filter(r => r[config.xCol] === xVal);
+          if (atX.length === 0) return null;
+          const count = atX.filter(r => r[config.seriesCol] === sVal).length;
+          return Math.round(count / atX.length * 100) || null;
+        }),
+      }));
+
+      slide.addChart(pres.charts.BAR, chartData, {
+        x: chartX[col], y: chartY[row], w: chartW, h: chartH,
+        chartColors: pieColors,
+        barDir: 'col',
+        barGrouping: 'stacked',
+        showValue: true,
+        dataLabelFontSize: 7,
+        dataLabelFormatCode: '0"%"',
+        valAxisHidden: true,
+        valGridLine: { style: 'none' },
+        catAxisLabelFontSize: 7,
+        showLegend: false,
+      });
+    }
+
+    // Legend for series
+    const top = legendTopY(config.seriesLabels.length);
+    config.seriesLabels.forEach((text, k) => {
+      slide.addShape(pres.shapes.RECTANGLE, {
+        x: 0.2, y: top + k * legendPitch, w: 0.14, h: 0.14,
+        fill: { color: pieColors[k % pieColors.length] },
+        line: { color: pieColors[k % pieColors.length] },
+      });
+      slide.addText(text, {
+        x: 0.42, y: top + k * legendPitch, w: 8.5, h: 0.18,
+        fontSize: 7, color: '1A1A2E',
+      });
+    });
+  }
+}
+
 
 app.post('/upload', upload.single('file'), async (req, res) => {
   try {
-
-    // ─── Load data ────────────────────────────────────────────────────────────────
     const wb = XLSX.read(req.file.buffer, { type: 'buffer' });
     const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-    // ─── Normalize column names: replace non-breaking spaces with regular spaces ──
+    // Normalize non-breaking spaces in column names
     const normalizedData = data.map(row => {
       const newRow = {};
       Object.keys(row).forEach(k => {
@@ -502,7 +568,7 @@ app.post('/upload', upload.single('file'), async (req, res) => {
       return newRow;
     });
 
-    // ─── Group rows by line ───────────────────────────────────────────────────────
+    // Group rows by line
     const normalizedLineColumn = lineColumn.replace(/\xa0/g, ' ');
     const lines = {};
     normalizedData.forEach(row => {
@@ -514,12 +580,12 @@ app.post('/upload', upload.single('file'), async (req, res) => {
 
     const pres = new pptxgen();
 
-    // ─── Generate slides for each configured column ───────────────────────────────
     COLUMN_CONFIG.forEach(config => {
-      // normalize xa0 in config column names to match what XLSX actually reads
       const c = JSON.parse(JSON.stringify(config));
       if (c.column) c.column = c.column.replace(/\xa0/g, ' ');
       if (c.columns) c.columns = c.columns.map(col => col.replace(/\xa0/g, ' '));
+      if (c.xCol) c.xCol = c.xCol.replace(/\xa0/g, ' ');
+      if (c.seriesCol) c.seriesCol = c.seriesCol.replace(/\xa0/g, ' ');
 
       switch (c.chartType) {
         case 'pie':
@@ -529,17 +595,18 @@ app.post('/upload', upload.single('file'), async (req, res) => {
         case 'multiBar':
           addMultiBarSlides(pres, lines, c);
           break;
-case 'multiSelect':
+        case 'multiSelect':
           addMultiSelectSlides(pres, lines, c);
+          break;
+        case 'stackedBar':
+          addStackedBarSlides(pres, lines, c);
           break;
       }
     });
 
     const buffer = await pres.write({ outputType: 'nodebuffer' });
-
     res.setHeader('Content-Disposition', 'attachment; filename=report.pptx');
     res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-
     res.send(buffer);
 
   } catch (err) {
@@ -547,5 +614,6 @@ case 'multiSelect':
     res.status(500).json({ error: err.message });
   }
 });
+
 const port = process.env.PORT || 3000;
 app.listen(port, () => console.log('running on ' + port));
