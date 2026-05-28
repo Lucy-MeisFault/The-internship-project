@@ -470,8 +470,15 @@ function addMultiSelectSlides(pres, lines, config) {
         fontSize: 9, bold: true, color: '1A1A2E',
       });
 
-      const vals = config.categories.map(cat =>
-        Math.round(responses.filter(r => String(r[config.column] || '').includes(cat)).length / total * 100)
+      // Count raw occurrences of each category
+      const rawCounts = config.categories.map(cat =>
+        responses.filter(r => String(r[config.column] || '').includes(cat)).length
+      );
+
+      // Normalize to 100% based on total responses
+      const totalOccurrences = rawCounts.reduce((sum, count) => sum + count, 0);
+      const vals = rawCounts.map(count =>
+        totalOccurrences > 0 ? Math.round(count / totalOccurrences * 100) : 0
       );
 
       slide.addChart(pres.charts.BAR, [{
