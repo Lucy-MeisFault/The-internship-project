@@ -522,13 +522,16 @@ function addStackedBarSlides(pres, lines, config) {
         }),
       }));
 
+      // shift 0.2in higher to make room for the two-column legend below
       slide.addChart(pres.charts.BAR, chartData, {
-        x: chartX[col], y: chartY[row], w: chartW, h: chartH,
+        x: chartX[col], y: chartY[row] - 0.2, w: chartW, h: chartH,
         chartColors: pieColors,
         barDir: 'col',
         barGrouping: 'stacked',
         showValue: true,
         dataLabelFontSize: 7,
+        dataLabelFontBold: true,
+        dataLabelColor: 'FFFFFF',
         dataLabelFormatCode: '0"%"',
         valAxisHidden: true,
         valGridLine: { style: 'none' },
@@ -537,16 +540,23 @@ function addStackedBarSlides(pres, lines, config) {
       });
     }
 
-    // Legend for series
-    const top = legendTopY(config.seriesLabels.length);
+    // Two-column legend so all 6 items fit without clipping
+    const colWidth = 4.7;
+    const legendX = [0.2, 0.2 + colWidth];
+    const itemsPerCol = Math.ceil(config.seriesLabels.length / 2);
+    const legendTop = 5.55;
     config.seriesLabels.forEach((text, k) => {
+      const lCol = Math.floor(k / itemsPerCol);
+      const lRow = k % itemsPerCol;
+      const lx = legendX[lCol];
+      const ly = legendTop + lRow * legendPitch;
       slide.addShape(pres.shapes.RECTANGLE, {
-        x: 0.2, y: top + k * legendPitch, w: 0.14, h: 0.14,
+        x: lx, y: ly, w: 0.14, h: 0.14,
         fill: { color: pieColors[k % pieColors.length] },
         line: { color: pieColors[k % pieColors.length] },
       });
       slide.addText(text, {
-        x: 0.42, y: top + k * legendPitch, w: 8.5, h: 0.18,
+        x: lx + 0.22, y: ly, w: colWidth - 0.28, h: 0.18,
         fontSize: 7, color: '1A1A2E',
       });
     });
